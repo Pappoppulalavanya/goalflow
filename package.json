@@ -1,0 +1,26 @@
+{
+  "name": "goalflow",
+  "version": "1.0.0",
+  "description": "GoalFlow - In-House Goal Setting & Tracking Portal | AtomQuest Hackathon 1.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "demo": "open index.html"
+  },
+  "keywords": ["goals", "performance", "tracking", "hr", "atomquest", "hackathon"],
+  "author": "GoalFlow Team",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "notes": {
+    "demo": "Simply open index.html in any browser - no install needed!",
+    "production": "Run: npm install && node server.js"
+  }
+}

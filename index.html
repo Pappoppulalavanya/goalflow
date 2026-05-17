@@ -1,0 +1,1555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GoalFlow — In-House Goal Setting & Tracking Portal</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #12121a;
+    --bg3: #1a1a26;
+    --bg4: #22222f;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #f0f0f8;
+    --text2: #9090a8;
+    --text3: #606078;
+    --accent: #6c63ff;
+    --accent2: #8b83ff;
+    --accent-bg: rgba(108,99,255,0.12);
+    --green: #22c55e;
+    --green-bg: rgba(34,197,94,0.1);
+    --amber: #f59e0b;
+    --amber-bg: rgba(245,158,11,0.1);
+    --red: #ef4444;
+    --red-bg: rgba(239,68,68,0.1);
+    --blue: #3b82f6;
+    --blue-bg: rgba(59,130,246,0.1);
+    --radius: 10px;
+    --radius-lg: 14px;
+    --font: 'Sora', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; }
+  button { font-family: var(--font); cursor: pointer; border: none; outline: none; }
+  input, select, textarea { font-family: var(--font); outline: none; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+  .gf-btn {
+    padding: 8px 16px; border-radius: var(--radius); font-size: 13px; font-weight: 500;
+    transition: all 0.15s ease; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .gf-btn-primary { background: var(--accent); color: #fff; }
+  .gf-btn-primary:hover { background: var(--accent2); }
+  .gf-btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border2); }
+  .gf-btn-ghost:hover { background: var(--bg3); color: var(--text); }
+  .gf-btn-danger { background: var(--red-bg); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+  .gf-btn-success { background: var(--green-bg); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+  .gf-input {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius);
+    color: var(--text); padding: 9px 12px; font-size: 13px; width: 100%;
+    transition: border-color 0.15s;
+  }
+  .gf-input:focus { border-color: var(--accent); }
+  .gf-input::placeholder { color: var(--text3); }
+  .gf-select {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius);
+    color: var(--text); padding: 9px 12px; font-size: 13px; width: 100%;
+    appearance: none; cursor: pointer;
+  }
+  .gf-label { font-size: 12px; color: var(--text2); font-weight: 500; margin-bottom: 5px; display: block; letter-spacing: 0.02em; }
+  .gf-card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 20px;
+  }
+  .gf-tag {
+    display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 6px;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.03em;
+  }
+  .tag-active { background: var(--green-bg); color: var(--green); }
+  .tag-pending { background: var(--amber-bg); color: var(--amber); }
+  .tag-locked { background: var(--accent-bg); color: var(--accent2); }
+  .tag-rejected { background: var(--red-bg); color: var(--red); }
+  .tag-ontrack { background: var(--blue-bg); color: var(--blue); }
+  .tag-completed { background: var(--green-bg); color: var(--green); }
+  .tag-notstarted { background: var(--bg4); color: var(--text2); }
+  .sidebar-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+    border-radius: var(--radius); font-size: 13px; cursor: pointer;
+    color: var(--text2); transition: all 0.15s; margin-bottom: 2px;
+  }
+  .sidebar-item:hover { background: var(--bg3); color: var(--text); }
+  .sidebar-item.active { background: var(--accent-bg); color: var(--accent2); }
+  .progress-bar-bg { background: var(--bg4); border-radius: 4px; height: 6px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+  .stat-card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 18px 20px;
+  }
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-box {
+    background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--radius-lg);
+    width: 100%; max-width: 640px; max-height: 90vh; overflow-y: auto;
+    padding: 28px;
+  }
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 200;
+    background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius);
+    padding: 12px 18px; font-size: 13px; display: flex; align-items: center; gap: 8px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4); min-width: 260px;
+    animation: slideup 0.25s ease;
+  }
+  @keyframes slideup { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 11px; color: var(--text3); font-weight: 500; text-align: left; padding: 8px 12px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
+  td { font-size: 13px; padding: 11px 12px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg3); }
+  .section-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 16px; }
+  .field-row { display: grid; gap: 14px; margin-bottom: 14px; }
+  .field-row-2 { grid-template-columns: 1fr 1fr; }
+  .field-row-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .field-row-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  @media (max-width: 640px) {
+    .field-row-2, .field-row-3, .field-row-4 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ─── SEED DATA ────────────────────────────────────────────────────────────────
+const USERS = [
+  { id: 1, name: 'Priya Sharma', email: 'priya@atomquest.in', role: 'employee', managerId: 3, dept: 'Engineering', avatar: 'PS' },
+  { id: 2, name: 'Rahul Verma', email: 'rahul@atomquest.in', role: 'employee', managerId: 3, dept: 'Product', avatar: 'RV' },
+  { id: 3, name: 'Meera Nair', email: 'meera@atomquest.in', role: 'manager', managerId: null, dept: 'Engineering', avatar: 'MN' },
+  { id: 4, name: 'Admin User', email: 'admin@atomquest.in', role: 'admin', managerId: null, dept: 'HR', avatar: 'AU' },
+];
+const CREDENTIALS = { 'priya@atomquest.in':'emp123', 'rahul@atomquest.in':'emp123', 'meera@atomquest.in':'mgr123', 'admin@atomquest.in':'admin123' };
+const THRUST_AREAS = ['Customer Excellence','Revenue Growth','Operational Efficiency','People & Culture','Technology & Innovation','Risk & Compliance','Sustainability','Product Quality'];
+const UOM_TYPES = ['Numeric (Min - Higher is Better)','Numeric (Max - Lower is Better)','Percentage (Min)','Percentage (Max)','Timeline','Zero-based'];
+const STATUS_OPTIONS = ['Not Started','On Track','Completed'];
+
+const DEMO_GOALS = [
+  { id: 101, employeeId: 1, title: 'Increase API throughput', thrustArea: 'Technology & Innovation', description: 'Improve backend API to handle 10k req/sec', uom: 'Numeric (Min - Higher is Better)', target: 10000, weightage: 30, status: 'On Track', q1Actual: 7000, q2Actual: 9000, q3Actual: null, q4Actual: null, approvalStatus: 'approved', isShared: false, comments: [] },
+  { id: 102, employeeId: 1, title: 'Reduce bug escape rate', thrustArea: 'Product Quality', description: 'Drive defect escape rate below 2%', uom: 'Numeric (Max - Lower is Better)', target: 2, weightage: 25, status: 'On Track', q1Actual: 4, q2Actual: 2.5, q3Actual: null, q4Actual: null, approvalStatus: 'approved', isShared: false, comments: [] },
+  { id: 103, employeeId: 1, title: 'Complete AWS certification', thrustArea: 'People & Culture', description: 'Obtain AWS Solutions Architect Associate', uom: 'Timeline', target: '2025-12-31', weightage: 20, status: 'Not Started', q1Actual: null, q2Actual: null, q3Actual: null, q4Actual: null, approvalStatus: 'approved', isShared: false, comments: [] },
+  { id: 104, employeeId: 1, title: 'Zero security incidents', thrustArea: 'Risk & Compliance', description: 'No production security incidents', uom: 'Zero-based', target: 0, weightage: 15, status: 'Completed', q1Actual: 0, q2Actual: 0, q3Actual: 0, q4Actual: 0, approvalStatus: 'approved', isShared: false, comments: [] },
+  { id: 105, employeeId: 1, title: 'Customer NPS score', thrustArea: 'Customer Excellence', description: 'Maintain NPS above 60', uom: 'Numeric (Min - Higher is Better)', target: 60, weightage: 10, status: 'Not Started', q1Actual: null, q2Actual: null, q3Actual: null, q4Actual: null, approvalStatus: 'pending', isShared: false, comments: [] },
+  { id: 106, employeeId: 2, title: 'Launch 3 product features', thrustArea: 'Product Quality', description: 'Ship 3 major features this year', uom: 'Numeric (Min - Higher is Better)', target: 3, weightage: 40, status: 'On Track', q1Actual: 1, q2Actual: 2, q3Actual: null, q4Actual: null, approvalStatus: 'approved', isShared: false, comments: [] },
+  { id: 107, employeeId: 2, title: 'Revenue target', thrustArea: 'Revenue Growth', description: 'Contribute to 20% revenue growth', uom: 'Percentage (Min)', target: 20, weightage: 35, status: 'On Track', q1Actual: 12, q2Actual: 18, q3Actual: null, q4Actual: null, approvalStatus: 'approved', isShared: false, comments: [] },
+  { id: 108, employeeId: 2, title: 'Reduce time to market', thrustArea: 'Operational Efficiency', description: 'Cut release cycle from 4 weeks to 2', uom: 'Numeric (Max - Lower is Better)', target: 2, weightage: 25, status: 'Not Started', q1Actual: null, q2Actual: null, q3Actual: null, q4Actual: null, approvalStatus: 'pending', isShared: false, comments: [] },
+];
+const AUDIT_LOG = [
+  { id: 1, userId: 3, userName: 'Meera Nair', action: 'Approved goal sheet', targetUser: 'Priya Sharma', goalId: 101, timestamp: '2025-05-03 09:15', detail: 'Goal #101 approved' },
+  { id: 2, userId: 3, userName: 'Meera Nair', action: 'Approved goal sheet', targetUser: 'Priya Sharma', goalId: 102, timestamp: '2025-05-03 09:17', detail: 'Goal #102 approved' },
+  { id: 3, userId: 1, userName: 'Priya Sharma', action: 'Submitted goal', targetUser: 'Priya Sharma', goalId: 105, timestamp: '2025-05-10 11:30', detail: 'Goal #105 pending approval' },
+  { id: 4, userId: 1, userName: 'Priya Sharma', action: 'Updated Q2 actual', targetUser: 'Priya Sharma', goalId: 101, timestamp: '2025-10-05 14:22', detail: 'Q2 achievement updated to 9000' },
+];
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function computeScore(goal, quarter) {
+  const actual = goal[`q${quarter}Actual`];
+  if (actual === null || actual === undefined) return null;
+  const t = parseFloat(goal.target);
+  const a = parseFloat(actual);
+  const uom = goal.uom;
+  if (uom.includes('Min') || uom.includes('Higher')) return Math.min(100, Math.round((a / t) * 100));
+  if (uom.includes('Max') || uom.includes('Lower')) return a === 0 ? 100 : Math.min(100, Math.round((t / a) * 100));
+  if (uom === 'Timeline') return actual && actual <= goal.target ? 100 : 60;
+  if (uom === 'Zero-based') return a === 0 ? 100 : 0;
+  return 0;
+}
+
+function totalWeightage(goals, excludeId = null) {
+  return goals.filter(g => g.id !== excludeId).reduce((s, g) => s + (parseFloat(g.weightage) || 0), 0);
+}
+
+function Avatar({ initials, size = 32, color = '#6c63ff' }) {
+  return (
+    <div style={{ width: size, height: size, borderRadius: '50%', background: `${color}22`, border: `1.5px solid ${color}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.35, fontWeight: 600, color, flexShrink: 0 }}>
+      {initials}
+    </div>
+  );
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+function Toast({ msg, type, onDone }) {
+  useEffect(() => { const t = setTimeout(onDone, 3000); return () => clearTimeout(t); }, []);
+  const colors = { success: '#22c55e', error: '#ef4444', info: '#6c63ff' };
+  return (
+    <div className="toast">
+      <span style={{ color: colors[type] || colors.info }}>●</span>
+      {msg}
+    </div>
+  );
+}
+
+// ─── LOGIN PAGE ───────────────────────────────────────────────────────────────
+function LoginPage({ onLogin }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const quickLogin = (e, p) => { setEmail(e); setPassword(p); };
+
+  const handleLogin = () => {
+    if (!email || !password) { setError('Please enter credentials'); return; }
+    setLoading(true);
+    setTimeout(() => {
+      const valid = CREDENTIALS[email] === password;
+      if (!valid) { setError('Invalid credentials'); setLoading(false); return; }
+      const user = USERS.find(u => u.email === email);
+      onLogin(user);
+    }, 600);
+  };
+
+  const demoCreds = [
+    { label: 'Employee', email: 'priya@atomquest.in', pass: 'emp123', color: '#3b82f6' },
+    { label: 'Manager', email: 'meera@atomquest.in', pass: 'mgr123', color: '#22c55e' },
+    { label: 'Admin', email: 'admin@atomquest.in', pass: 'admin123', color: '#f59e0b' },
+  ];
+
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', padding: 20 }}>
+      <div style={{ width: '100%', maxWidth: 420 }}>
+        {/* Logo */}
+        <div style={{ textAlign: 'center', marginBottom: 36 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+            <div style={{ width: 36, height: 36, background: 'var(--accent)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="2.2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            </div>
+            <span style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em' }}>GoalFlow</span>
+          </div>
+          <p style={{ fontSize: 13, color: 'var(--text2)' }}>Goal Setting & Tracking Portal · AtomQuest Hackathon 1.0</p>
+        </div>
+
+        {/* Demo quick-login */}
+        <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: 16, marginBottom: 20 }}>
+          <p style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 500 }}>Quick Demo Login</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+            {demoCreds.map(d => (
+              <button key={d.label} className="gf-btn gf-btn-ghost" style={{ justifyContent: 'center', borderColor: `${d.color}33`, fontSize: 12 }}
+                onClick={() => quickLogin(d.email, d.pass)}>
+                <span style={{ color: d.color }}>●</span> {d.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="gf-card">
+          <div style={{ marginBottom: 14 }}>
+            <label className="gf-label">Email</label>
+            <input className="gf-input" type="email" placeholder="you@company.com" value={email} onChange={e => { setEmail(e.target.value); setError(''); }} onKeyDown={e => e.key === 'Enter' && handleLogin()} />
+          </div>
+          <div style={{ marginBottom: 20 }}>
+            <label className="gf-label">Password</label>
+            <input className="gf-input" type="password" placeholder="••••••••" value={password} onChange={e => { setPassword(e.target.value); setError(''); }} onKeyDown={e => e.key === 'Enter' && handleLogin()} />
+          </div>
+          {error && <p style={{ color: 'var(--red)', fontSize: 12, marginBottom: 12 }}>{error}</p>}
+          <button className="gf-btn gf-btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '10px 16px', fontSize: 14 }} onClick={handleLogin} disabled={loading}>
+            {loading ? 'Signing in…' : 'Sign In'}
+          </button>
+        </div>
+
+        <div style={{ marginTop: 20, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: 12 }}>
+          <p style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 6, fontWeight: 500 }}>Login Credentials</p>
+          {demoCreds.map(d => (
+            <p key={d.label} style={{ fontSize: 12, color: 'var(--text2)', fontFamily: 'var(--mono)', marginBottom: 2 }}>
+              <span style={{ color: d.color }}>{d.label}:</span> {d.email} / {d.pass}
+            </p>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── SIDEBAR ─────────────────────────────────────────────────────────────────
+function Sidebar({ user, activePage, setActivePage, onLogout }) {
+  const employeeNav = [
+    { id: 'dashboard', label: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+    { id: 'goals', label: 'My Goals', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4' },
+    { id: 'checkin', label: 'Quarterly Check-in', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+  ];
+  const managerNav = [
+    { id: 'dashboard', label: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+    { id: 'team', label: 'Team Goals', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0' },
+    { id: 'approvals', label: 'Approvals', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0' },
+    { id: 'analytics', label: 'Analytics', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
+  ];
+  const adminNav = [
+    { id: 'dashboard', label: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+    { id: 'cycles', label: 'Cycle Management', icon: 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' },
+    { id: 'hierarchy', label: 'Org Hierarchy', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10' },
+    { id: 'reports', label: 'Reports', icon: 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+    { id: 'audit', label: 'Audit Trail', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
+    { id: 'analytics', label: 'Analytics', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
+  ];
+  const navMap = { employee: employeeNav, manager: managerNav, admin: adminNav };
+  const nav = navMap[user.role] || employeeNav;
+  const roleColors = { employee: '#3b82f6', manager: '#22c55e', admin: '#f59e0b' };
+  const roleColor = roleColors[user.role];
+
+  return (
+    <div style={{ width: 220, background: 'var(--bg2)', borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', padding: '20px 12px', flexShrink: 0, minHeight: '100vh' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 4px', marginBottom: 28 }}>
+        <div style={{ width: 28, height: 28, background: 'var(--accent)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="2.2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        </div>
+        <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-0.02em' }}>GoalFlow</span>
+      </div>
+
+      <nav style={{ flex: 1 }}>
+        {nav.map(item => (
+          <div key={item.id} className={`sidebar-item${activePage === item.id ? ' active' : ''}`} onClick={() => setActivePage(item.id)}>
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <path d={item.icon} />
+            </svg>
+            {item.label}
+          </div>
+        ))}
+      </nav>
+
+      <div className="divider" />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 4px', marginBottom: 8 }}>
+        <Avatar initials={user.avatar} size={30} color={roleColor} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontSize: 12, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name}</p>
+          <p style={{ fontSize: 10, color: 'var(--text3)', textTransform: 'capitalize' }}>{user.role}</p>
+        </div>
+      </div>
+      <button className="gf-btn gf-btn-ghost" style={{ width: '100%', justifyContent: 'center', fontSize: 12 }} onClick={onLogout}>Sign Out</button>
+    </div>
+  );
+}
+
+// ─── EMPLOYEE DASHBOARD ───────────────────────────────────────────────────────
+function EmployeeDashboard({ user, goals, setActivePage }) {
+  const myGoals = goals.filter(g => g.employeeId === user.id);
+  const approved = myGoals.filter(g => g.approvalStatus === 'approved').length;
+  const pending = myGoals.filter(g => g.approvalStatus === 'pending').length;
+  const totalW = totalWeightage(myGoals);
+  const completed = myGoals.filter(g => g.status === 'Completed').length;
+  const avgScore = myGoals.reduce((s, g) => s + (computeScore(g, 2) || 0), 0) / (myGoals.length || 1);
+
+  const quarter = { label: 'Q2 Check-in', open: true, window: 'October 2025' };
+
+  return (
+    <div>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em' }}>Good morning, {user.name.split(' ')[0]} 👋</h1>
+        <p style={{ fontSize: 13, color: 'var(--text2)', marginTop: 4 }}>Your performance cycle is active · {quarter.label} window: {quarter.window}</p>
+      </div>
+
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
+        {[
+          { label: 'Total Goals', val: myGoals.length, sub: `/ 8 max`, color: 'var(--accent)' },
+          { label: 'Approved', val: approved, sub: `${pending} pending`, color: 'var(--green)' },
+          { label: 'Weightage', val: `${totalW}%`, sub: totalW === 100 ? '✓ Valid' : '⚠ Must = 100%', color: totalW === 100 ? 'var(--green)' : 'var(--amber)' },
+          { label: 'Avg Progress', val: `${Math.round(avgScore)}%`, sub: `${completed} completed`, color: 'var(--blue)' },
+        ].map(s => (
+          <div key={s.label} className="stat-card">
+            <p style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>{s.label}</p>
+            <p style={{ fontSize: 24, fontWeight: 700, color: s.color, letterSpacing: '-0.02em' }}>{s.val}</p>
+            <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{s.sub}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Check-in alert */}
+      {quarter.open && (
+        <div style={{ background: 'rgba(108,99,255,0.08)', border: '1px solid rgba(108,99,255,0.25)', borderRadius: 'var(--radius)', padding: '12px 16px', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--accent2)' }}>Q2 Check-in window is open</p>
+            <p style={{ fontSize: 12, color: 'var(--text2)' }}>Log your Q2 actuals before October 31, 2025</p>
+          </div>
+          <button className="gf-btn gf-btn-primary" style={{ fontSize: 12 }} onClick={() => setActivePage('checkin')}>Update Now</button>
+        </div>
+      )}
+
+      {/* Goals list */}
+      <div className="gf-card">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <p className="section-title" style={{ margin: 0 }}>My Goals Overview</p>
+          <button className="gf-btn gf-btn-ghost" style={{ fontSize: 12 }} onClick={() => setActivePage('goals')}>View All →</button>
+        </div>
+        {myGoals.slice(0, 4).map(g => {
+          const score = computeScore(g, 2);
+          return (
+            <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, padding: '10px 12px', background: 'var(--bg3)', borderRadius: 'var(--radius)' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <p style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.title}</p>
+                  <span className={`gf-tag tag-${g.approvalStatus}`}>{g.approvalStatus}</span>
+                </div>
+                <p style={{ fontSize: 11, color: 'var(--text3)' }}>{g.thrustArea} · {g.weightage}% weight</p>
+              </div>
+              {score !== null && (
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <p style={{ fontSize: 15, fontWeight: 600, color: score >= 80 ? 'var(--green)' : score >= 50 ? 'var(--amber)' : 'var(--red)' }}>{score}%</p>
+                  <p style={{ fontSize: 10, color: 'var(--text3)' }}>Q2</p>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── GOAL FORM MODAL ──────────────────────────────────────────────────────────
+function GoalFormModal({ goal, onSave, onClose, existingGoals, userId }) {
+  const isEdit = !!goal;
+  const others = existingGoals.filter(g => g.id !== (goal?.id));
+  const usedW = totalWeightage(others);
+  const maxW = 100 - usedW;
+
+  const [form, setForm] = useState({
+    title: goal?.title || '',
+    thrustArea: goal?.thrustArea || THRUST_AREAS[0],
+    description: goal?.description || '',
+    uom: goal?.uom || UOM_TYPES[0],
+    target: goal?.target || '',
+    weightage: goal?.weightage || '',
+  });
+  const [errors, setErrors] = useState({});
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const validate = () => {
+    const e = {};
+    if (!form.title.trim()) e.title = 'Title required';
+    if (!form.target) e.target = 'Target required';
+    const w = parseFloat(form.weightage);
+    if (!w || isNaN(w)) e.weightage = 'Weightage required';
+    else if (w < 10) e.weightage = 'Minimum 10%';
+    else if (w > maxW + (goal?.weightage || 0)) e.weightage = `Max allowed: ${maxW + (goal?.weightage || 0)}%`;
+    if (!isEdit && existingGoals.length >= 8) e.title = 'Max 8 goals allowed';
+    return e;
+  };
+
+  const handleSave = () => {
+    const e = validate();
+    if (Object.keys(e).length) { setErrors(e); return; }
+    const newTotal = usedW + parseFloat(form.weightage);
+    if (!isEdit && newTotal > 100) { setErrors({ weightage: `Adding this would exceed 100% (current: ${usedW}%)` }); return; }
+    onSave({ ...goal, ...form, weightage: parseFloat(form.weightage), employeeId: userId, approvalStatus: 'pending', status: 'Not Started', isShared: false });
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-box">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <h2 style={{ fontSize: 17, fontWeight: 600 }}>{isEdit ? 'Edit Goal' : 'Create New Goal'}</h2>
+          <button className="gf-btn gf-btn-ghost" style={{ padding: '4px 8px' }} onClick={onClose}>✕</button>
+        </div>
+
+        <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px 12px', marginBottom: 16, fontSize: 12, color: 'var(--text2)' }}>
+          Weightage used: <strong style={{ color: 'var(--text)' }}>{usedW}%</strong> · Available: <strong style={{ color: usedW + parseFloat(form.weightage || 0) === 100 ? 'var(--green)' : 'var(--amber)' }}>{maxW}%</strong> · Goals: {existingGoals.length}/8
+        </div>
+
+        <div className="field-row">
+          <div>
+            <label className="gf-label">Goal Title *</label>
+            <input className="gf-input" value={form.title} onChange={e => set('title', e.target.value)} placeholder="e.g. Increase NPS score" />
+            {errors.title && <p style={{ fontSize: 11, color: 'var(--red)', marginTop: 4 }}>{errors.title}</p>}
+          </div>
+        </div>
+
+        <div className="field-row field-row-2">
+          <div>
+            <label className="gf-label">Thrust Area *</label>
+            <select className="gf-select" value={form.thrustArea} onChange={e => set('thrustArea', e.target.value)}>
+              {THRUST_AREAS.map(a => <option key={a}>{a}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="gf-label">Unit of Measurement (UoM) *</label>
+            <select className="gf-select" value={form.uom} onChange={e => set('uom', e.target.value)}>
+              {UOM_TYPES.map(u => <option key={u}>{u}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div className="field-row">
+          <div>
+            <label className="gf-label">Description</label>
+            <textarea className="gf-input" rows={2} value={form.description} onChange={e => set('description', e.target.value)} placeholder="Describe this goal and how success looks…" style={{ resize: 'vertical' }} />
+          </div>
+        </div>
+
+        <div className="field-row field-row-2">
+          <div>
+            <label className="gf-label">Target {form.uom === 'Timeline' ? '(Date)' : form.uom.includes('%') ? '(%)' : '(Value)'} *</label>
+            <input className="gf-input" type={form.uom === 'Timeline' ? 'date' : 'number'} value={form.target} onChange={e => set('target', e.target.value)} placeholder={form.uom === 'Zero-based' ? '0' : '100'} />
+            {errors.target && <p style={{ fontSize: 11, color: 'var(--red)', marginTop: 4 }}>{errors.target}</p>}
+          </div>
+          <div>
+            <label className="gf-label">Weightage (%) * — min 10%</label>
+            <input className="gf-input" type="number" min="10" max={maxW} value={form.weightage} onChange={e => set('weightage', e.target.value)} placeholder={`max ${maxW}%`} />
+            {errors.weightage && <p style={{ fontSize: 11, color: 'var(--red)', marginTop: 4 }}>{errors.weightage}</p>}
+          </div>
+        </div>
+
+        <div className="divider" />
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button className="gf-btn gf-btn-ghost" onClick={onClose}>Cancel</button>
+          <button className="gf-btn gf-btn-primary" onClick={handleSave}>{isEdit ? 'Save Changes' : 'Create Goal'}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── EMPLOYEE GOALS PAGE ──────────────────────────────────────────────────────
+function EmployeeGoalsPage({ user, goals, setGoals, showToast }) {
+  const myGoals = goals.filter(g => g.employeeId === user.id);
+  const [showModal, setShowModal] = useState(false);
+  const [editGoal, setEditGoal] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const totalW = totalWeightage(myGoals);
+  const canSubmit = totalW === 100 && myGoals.some(g => g.approvalStatus === 'draft' || g.approvalStatus === 'pending');
+
+  const handleSave = (data) => {
+    if (data.id) {
+      setGoals(prev => prev.map(g => g.id === data.id ? { ...data } : g));
+      showToast('Goal updated', 'success');
+    } else {
+      const newGoal = { ...data, id: Date.now(), q1Actual: null, q2Actual: null, q3Actual: null, q4Actual: null, comments: [] };
+      setGoals(prev => [...prev, newGoal]);
+      showToast('Goal created', 'success');
+    }
+    setShowModal(false); setEditGoal(null);
+  };
+
+  const handleDelete = (id) => {
+    const g = goals.find(x => x.id === id);
+    if (g?.approvalStatus === 'approved') { showToast('Locked goals cannot be deleted', 'error'); return; }
+    setGoals(prev => prev.filter(x => x.id !== id));
+    showToast('Goal removed', 'info');
+  };
+
+  const handleSubmitAll = () => {
+    if (totalW !== 100) { showToast('Total weightage must equal 100%', 'error'); return; }
+    setSubmitting(true);
+    setTimeout(() => {
+      setGoals(prev => prev.map(g => g.employeeId === user.id && g.approvalStatus !== 'approved' ? { ...g, approvalStatus: 'pending' } : g));
+      showToast('Goals submitted for manager review', 'success');
+      setSubmitting(false);
+    }, 600);
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+        <div>
+          <h1 style={{ fontSize: 20, fontWeight: 700 }}>My Goals</h1>
+          <p style={{ fontSize: 13, color: 'var(--text2)', marginTop: 2 }}>Performance cycle 2025–26</p>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {myGoals.length < 8 && (
+            <button className="gf-btn gf-btn-ghost" onClick={() => { setEditGoal(null); setShowModal(true); }}>+ Add Goal</button>
+          )}
+          {totalW > 0 && totalW !== 100 && <span style={{ alignSelf: 'center', fontSize: 12, color: 'var(--amber)', background: 'var(--amber-bg)', padding: '5px 10px', borderRadius: 6 }}>Total: {totalW}% (need 100%)</span>}
+          {totalW === 100 && <span style={{ alignSelf: 'center', fontSize: 12, color: 'var(--green)', background: 'var(--green-bg)', padding: '5px 10px', borderRadius: 6 }}>✓ 100% allocated</span>}
+          <button className="gf-btn gf-btn-primary" onClick={handleSubmitAll} disabled={!canSubmit || submitting}>
+            {submitting ? 'Submitting…' : 'Submit for Approval'}
+          </button>
+        </div>
+      </div>
+
+      {myGoals.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--bg2)', border: '1px dashed var(--border2)', borderRadius: 'var(--radius-lg)' }}>
+          <p style={{ fontSize: 32, marginBottom: 12 }}>🎯</p>
+          <p style={{ fontSize: 15, fontWeight: 500, marginBottom: 6 }}>No goals yet</p>
+          <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 16 }}>Create your first goal for the 2025–26 cycle</p>
+          <button className="gf-btn gf-btn-primary" onClick={() => setShowModal(true)}>+ Create First Goal</button>
+        </div>
+      ) : (
+        <div className="gf-card" style={{ padding: 0, overflow: 'hidden' }}>
+          <table>
+            <thead>
+              <tr>
+                <th>Goal</th><th>Thrust Area</th><th>UoM</th><th>Target</th>
+                <th>Weight</th><th>Status</th><th>Approval</th><th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {myGoals.map(g => (
+                <tr key={g.id}>
+                  <td>
+                    <p style={{ fontWeight: 500, fontSize: 13 }}>{g.title}</p>
+                    {g.isShared && <span style={{ fontSize: 10, color: 'var(--accent2)', background: 'var(--accent-bg)', padding: '1px 6px', borderRadius: 4 }}>SHARED</span>}
+                    {g.description && <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2, maxWidth: 200 }}>{g.description.slice(0, 60)}{g.description.length > 60 ? '…' : ''}</p>}
+                  </td>
+                  <td style={{ fontSize: 12, color: 'var(--text2)' }}>{g.thrustArea}</td>
+                  <td style={{ fontSize: 11, fontFamily: 'var(--mono)', color: 'var(--text2)' }}>{g.uom.split(' ')[0]}</td>
+                  <td style={{ fontFamily: 'var(--mono)', fontSize: 13 }}>{g.target}</td>
+                  <td><span style={{ fontFamily: 'var(--mono)', fontSize: 13, fontWeight: 600, color: 'var(--accent2)' }}>{g.weightage}%</span></td>
+                  <td><span className={`gf-tag tag-${g.status?.toLowerCase().replace(/ /g, '')}`}>{g.status}</span></td>
+                  <td><span className={`gf-tag tag-${g.approvalStatus}`}>{g.approvalStatus}</span></td>
+                  <td>
+                    {g.approvalStatus !== 'approved' && !g.isShared && (
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        <button className="gf-btn gf-btn-ghost" style={{ padding: '4px 8px', fontSize: 11 }} onClick={() => { setEditGoal(g); setShowModal(true); }}>Edit</button>
+                        <button className="gf-btn gf-btn-danger" style={{ padding: '4px 8px', fontSize: 11 }} onClick={() => handleDelete(g.id)}>✕</button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {showModal && (
+        <GoalFormModal
+          goal={editGoal}
+          onSave={handleSave}
+          onClose={() => { setShowModal(false); setEditGoal(null); }}
+          existingGoals={myGoals}
+          userId={user.id}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── QUARTERLY CHECK-IN ────────────────────────────────────────────────────────
+function CheckInPage({ user, goals, setGoals, showToast }) {
+  const myGoals = goals.filter(g => g.employeeId === user.id && g.approvalStatus === 'approved');
+  const [activeQ, setActiveQ] = useState('q2');
+  const quarters = [
+    { key: 'q1', label: 'Q1 (July)', open: false },
+    { key: 'q2', label: 'Q2 (October)', open: true },
+    { key: 'q3', label: 'Q3 (January)', open: false },
+    { key: 'q4', label: 'Q4 (March)', open: false },
+  ];
+
+  const updateActual = (goalId, qKey, val) => {
+    setGoals(prev => prev.map(g => g.id === goalId ? { ...g, [`${qKey}Actual`]: val } : g));
+  };
+
+  const updateStatus = (goalId, status) => {
+    setGoals(prev => prev.map(g => g.id === goalId ? { ...g, status } : g));
+  };
+
+  const handleSave = () => {
+    showToast('Check-in saved successfully', 'success');
+  };
+
+  const qObj = quarters.find(q => q.key === activeQ);
+
+  return (
+    <div>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700 }}>Quarterly Check-in</h1>
+        <p style={{ fontSize: 13, color: 'var(--text2)', marginTop: 2 }}>Log your actual achievement against planned targets</p>
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+        {quarters.map(q => (
+          <button key={q.key} className={`gf-btn ${activeQ === q.key ? 'gf-btn-primary' : 'gf-btn-ghost'}`}
+            style={{ fontSize: 12 }} onClick={() => setActiveQ(q.key)}>
+            {q.label} {!q.open && '🔒'}
+          </button>
+        ))}
+      </div>
+
+      {!qObj.open ? (
+        <div style={{ textAlign: 'center', padding: '40px 20px', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)' }}>
+          <p style={{ fontSize: 24, marginBottom: 8 }}>🔒</p>
+          <p style={{ fontSize: 14, fontWeight: 500 }}>This check-in window is not yet open</p>
+          <p style={{ fontSize: 13, color: 'var(--text2)', marginTop: 4 }}>Q2 (October) window is currently active</p>
+        </div>
+      ) : myGoals.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '40px 20px', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)' }}>
+          <p style={{ fontSize: 14, color: 'var(--text2)' }}>No approved goals found. Submit your goals for manager approval first.</p>
+        </div>
+      ) : (
+        <>
+          <div className="gf-card" style={{ padding: 0, overflow: 'hidden', marginBottom: 16 }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Goal</th><th>UoM</th><th>Target</th>
+                  <th>Actual ({activeQ.toUpperCase()})</th><th>Progress</th><th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {myGoals.map(g => {
+                  const actual = g[`${activeQ}Actual`];
+                  const score = actual !== null && actual !== undefined ? computeScore({ ...g, [`${activeQ}Actual`]: actual }, parseInt(activeQ.slice(1))) : null;
+                  return (
+                    <tr key={g.id}>
+                      <td>
+                        <p style={{ fontWeight: 500, fontSize: 13 }}>{g.title}</p>
+                        <p style={{ fontSize: 11, color: 'var(--text3)' }}>{g.thrustArea}</p>
+                      </td>
+                      <td style={{ fontSize: 11, color: 'var(--text2)', fontFamily: 'var(--mono)' }}>{g.uom.split(' ')[0]}</td>
+                      <td style={{ fontFamily: 'var(--mono)', fontSize: 13 }}>{g.target}</td>
+                      <td>
+                        <input
+                          className="gf-input"
+                          type={g.uom === 'Timeline' ? 'date' : 'number'}
+                          value={actual ?? ''}
+                          onChange={e => updateActual(g.id, activeQ, e.target.value === '' ? null : parseFloat(e.target.value))}
+                          style={{ width: 120 }}
+                          placeholder="Enter actual"
+                        />
+                      </td>
+                      <td>
+                        {score !== null ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div className="progress-bar-bg" style={{ width: 80 }}>
+                              <div className="progress-bar-fill" style={{ width: `${score}%`, background: score >= 80 ? 'var(--green)' : score >= 50 ? 'var(--amber)' : 'var(--red)' }} />
+                            </div>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: score >= 80 ? 'var(--green)' : score >= 50 ? 'var(--amber)' : 'var(--red)' }}>{score}%</span>
+                          </div>
+                        ) : <span style={{ color: 'var(--text3)', fontSize: 12 }}>—</span>}
+                      </td>
+                      <td>
+                        <select className="gf-select" value={g.status} onChange={e => updateStatus(g.id, e.target.value)} style={{ width: 130 }}>
+                          {STATUS_OPTIONS.map(s => <option key={s}>{s}</option>)}
+                        </select>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <button className="gf-btn gf-btn-primary" onClick={handleSave}>Save Check-in</button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── MANAGER DASHBOARD ────────────────────────────────────────────────────────
+function ManagerDashboard({ user, goals, users }) {
+  const myTeam = users.filter(u => u.managerId === user.id);
+  const teamGoals = goals.filter(g => myTeam.some(u => u.id === g.employeeId));
+  const pending = teamGoals.filter(g => g.approvalStatus === 'pending').length;
+  const approved = teamGoals.filter(g => g.approvalStatus === 'approved').length;
+  const onTrack = teamGoals.filter(g => g.status === 'On Track').length;
+
+  return (
+    <div>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700 }}>Manager Dashboard</h1>
+        <p style={{ fontSize: 13, color: 'var(--text2)', marginTop: 2 }}>Team performance overview · {myTeam.length} direct reports</p>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
+        {[
+          { label: 'Team Size', val: myTeam.length, color: 'var(--accent)' },
+          { label: 'Pending Approval', val: pending, color: 'var(--amber)' },
+          { label: 'Approved Goals', val: approved, color: 'var(--green)' },
+          { label: 'On Track', val: onTrack, color: 'var(--blue)' },
+        ].map(s => (
+          <div key={s.label} className="stat-card">
+            <p style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>{s.label}</p>
+            <p style={{ fontSize: 24, fontWeight: 700, color: s.color }}>{s.val}</p>
+          </div>
+        ))}
+      </div>
+
+      {pending > 0 && (
+        <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 'var(--radius)', padding: '12px 16px', marginBottom: 24 }}>
+          <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--amber)' }}>⚠ {pending} goal(s) awaiting your approval</p>
+          <p style={{ fontSize: 12, color: 'var(--text2)' }}>Review and approve or reject team submissions</p>
+        </div>
+      )}
+
+      <div className="gf-card">
+        <p className="section-title">Team Members</p>
+        {myTeam.map(member => {
+          const mGoals = teamGoals.filter(g => g.employeeId === member.id);
+          const mPending = mGoals.filter(g => g.approvalStatus === 'pending').length;
+          const mApproved = mGoals.filter(g => g.approvalStatus === 'approved').length;
+          const avgScore = mGoals.reduce((s, g) => s + (computeScore(g, 2) || 0), 0) / (mGoals.length || 1);
+
+          return (
+            <div key={member.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
+              <Avatar initials={member.avatar} size={36} color="#3b82f6" />
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: 13, fontWeight: 500 }}>{member.name}</p>
+                <p style={{ fontSize: 11, color: 'var(--text3)' }}>{member.dept}</p>
+              </div>
+              <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                <div style={{ textAlign: 'center' }}>
+                  <p style={{ fontSize: 16, fontWeight: 600 }}>{mGoals.length}</p>
+                  <p style={{ fontSize: 10, color: 'var(--text3)' }}>Goals</p>
+                </div>
+                {mPending > 0 && <span className="gf-tag tag-pending">{mPending} pending</span>}
+                {mApproved > 0 && <span className="gf-tag tag-active">{mApproved} approved</span>}
+                {mGoals.length > 0 && <div style={{ textAlign: 'center' }}>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: Math.round(avgScore) >= 70 ? 'var(--green)' : 'var(--amber)' }}>{Math.round(avgScore)}%</p>
+                  <p style={{ fontSize: 10, color: 'var(--text3)' }}>Avg Q2</p>
+                </div>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── MANAGER APPROVALS ─────────────────────────────────────────────────────────
+function ApprovalsPage({ user, goals, setGoals, users, showToast }) {
+  const myTeam = users.filter(u => u.managerId === user.id);
+  const pendingGoals = goals.filter(g => myTeam.some(u => u.id === g.employeeId) && g.approvalStatus === 'pending');
+  const [editingGoal, setEditingGoal] = useState(null);
+  const [commentModal, setCommentModal] = useState(null);
+  const [comment, setComment] = useState('');
+
+  const approve = (goalId) => {
+    setGoals(prev => prev.map(g => g.id === goalId ? { ...g, approvalStatus: 'approved' } : g));
+    showToast('Goal approved and locked', 'success');
+  };
+
+  const reject = (goalId, note) => {
+    setGoals(prev => prev.map(g => g.id === goalId ? { ...g, approvalStatus: 'rejected', comments: [...(g.comments || []), { by: user.name, text: note || 'Returned for rework', time: new Date().toLocaleString() }] } : g));
+    showToast('Goal returned for rework', 'info');
+    setCommentModal(null);
+  };
+
+  const saveInlineEdit = (g) => {
+    setGoals(prev => prev.map(x => x.id === g.id ? g : x));
+    setEditingGoal(null);
+    showToast('Goal updated', 'success');
+  };
+
+  const approveAll = (employeeId) => {
+    const empGoals = pendingGoals.filter(g => g.employeeId === employeeId);
+    const total = empGoals.reduce((s, g) => s + g.weightage, 0);
+    if (total !== 100) { showToast(`Total weightage is ${total}% — must be 100% before approving`, 'error'); return; }
+    setGoals(prev => prev.map(g => empGoals.some(e => e.id === g.id) ? { ...g, approvalStatus: 'approved' } : g));
+    showToast('All goals approved and locked', 'success');
+  };
+
+  const grouped = {};
+  pendingGoals.forEach(g => {
+    if (!grouped[g.employeeId]) grouped[g.employeeId] = [];
+    grouped[g.employeeId].push(g);
+  });
+
+  return (
+    <div>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700 }}>Goal Approvals</h1>
+        <p style={{ fontSize: 13, color: 'var(--text2)', marginTop: 2 }}>{pendingGoals.length} pending approval{pendingGoals.length !== 1 ? 's' : ''}</p>
+      </div>
+
+      {Object.keys(grouped).length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--bg2)', border: '1px dashed var(--border2)', borderRadius: 'var(--radius-lg)' }}>
+          <p style={{ fontSize: 32, marginBottom: 12 }}>✅</p>
+          <p style={{ fontSize: 15, fontWeight: 500, marginBottom: 6 }}>All caught up!</p>
+          <p style={{ fontSize: 13, color: 'var(--text2)' }}>No pending goal approvals for your team</p>
+        </div>
+      ) : Object.entries(grouped).map(([empId, empGoals]) => {
+        const emp = users.find(u => u.id === parseInt(empId));
+        const totalW = totalWeightage(empGoals);
+        return (
+          <div key={empId} className="gf-card" style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Avatar initials={emp?.avatar} size={32} color="#3b82f6" />
+                <div>
+                  <p style={{ fontSize: 14, fontWeight: 600 }}>{emp?.name}</p>
+                  <p style={{ fontSize: 11, color: 'var(--text3)' }}>{empGoals.length} goals · Total weight: <span style={{ color: totalW === 100 ? 'var(--green)' : 'var(--amber)', fontWeight: 600 }}>{totalW}%</span></p>
+                </div>
+              </div>
+              <button className="gf-btn gf-btn-success" style={{ fontSize: 12 }} onClick={() => approveAll(parseInt(empId))}>Approve All</button>
+            </div>
+
+            {empGoals.map(g => (
+              <div key={g.id} style={{ background: 'var(--bg3)', borderRadius: 'var(--radius)', padding: 14, marginBottom: 10 }}>
+                {editingGoal?.id === g.id ? (
+                  <InlineGoalEdit goal={editingGoal} onChange={setEditingGoal} onSave={saveInlineEdit} onCancel={() => setEditingGoal(null)} />
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontSize: 13, fontWeight: 500 }}>{g.title}</p>
+                      <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{g.thrustArea} · {g.uom} · Target: {g.target} · Weight: {g.weightage}%</p>
+                      {g.description && <p style={{ fontSize: 12, color: 'var(--text2)', marginTop: 6 }}>{g.description}</p>}
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                      <button className="gf-btn gf-btn-ghost" style={{ fontSize: 11, padding: '4px 10px' }} onClick={() => setEditingGoal({ ...g })}>Edit</button>
+                      <button className="gf-btn gf-btn-success" style={{ fontSize: 11, padding: '4px 10px' }} onClick={() => approve(g.id)}>✓ Approve</button>
+                      <button className="gf-btn gf-btn-danger" style={{ fontSize: 11, padding: '4px 10px' }} onClick={() => setCommentModal(g.id)}>✗ Reject</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        );
+      })}
+
+      {commentModal && (
+        <div className="modal-overlay">
+          <div className="modal-box" style={{ maxWidth: 440 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 14 }}>Return for Rework</h2>
+            <label className="gf-label">Comment / Reason</label>
+            <textarea className="gf-input" rows={4} value={comment} onChange={e => setComment(e.target.value)} placeholder="Explain what needs to be changed…" style={{ resize: 'vertical' }} />
+            <div className="divider" />
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button className="gf-btn gf-btn-ghost" onClick={() => setCommentModal(null)}>Cancel</button>
+              <button className="gf-btn gf-btn-danger" onClick={() => reject(commentModal, comment)}>Return Goal</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InlineGoalEdit({ goal, onChange, onSave, onCancel }) {
+  return (
+    <div>
+      <div className="field-row field-row-2" style={{ marginBottom: 10 }}>
+        <div>
+          <label className="gf-label">Target</label>
+          <input className="gf-input" value={goal.target} onChange={e => onChange({ ...goal, target: e.target.value })} />
+        </div>
+        <div>
+          <label className="gf-label">Weightage (%)</label>
+          <input className="gf-input" type="number" min="10" max="100" value={goal.weightage} onChange={e => onChange({ ...goal, weightage: parseFloat(e.target.value) })} />
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 6 }}>
+        <button className="gf-btn gf-btn-primary" style={{ fontSize: 12 }} onClick={() => onSave(goal)}>Save</button>
+        <button className="gf-btn gf-btn-ghost" style={{ fontSize: 12 }} onClick={onCancel}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── MANAGER TEAM PAGE ─────────────────────────────────────────────────────────
+function TeamGoalsPage({ user, goals, setGoals, users, showToast }) {
+  const myTeam = users.filter(u => u.managerId === user.id);
+  const [selectedEmp, setSelectedEmp] = useState(myTeam[0]?.id || null);
+  const [checkinModal, setCheckinModal] = useState(null);
+  const [checkinComment, setCheckinComment] = useState('');
+
+  const empGoals = goals.filter(g => g.employeeId === selectedEmp && g.approvalStatus === 'approved');
+  const selEmp = users.find(u => u.id === selectedEmp);
+
+  const saveCheckin = (goalId) => {
+    setGoals(prev => prev.map(g => g.id === goalId ? {
+      ...g, comments: [...(g.comments || []), { by: user.name, text: checkinComment, time: new Date().toLocaleString(), type: 'checkin' }]
+    } : g));
+    showToast('Check-in comment saved', 'success');
+    setCheckinModal(null); setCheckinComment('');
+  };
+
+  return (
+    <div>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700 }}>Team Goals</h1>
+        <p style={{ fontSize: 13, color: 'var(--text2)', marginTop: 2 }}>Review team progress and conduct check-ins</p>
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+        {myTeam.map(m => (
+          <button key={m.id} className={`gf-btn ${selectedEmp === m.id ? 'gf-btn-primary' : 'gf-btn-ghost'}`}
+            style={{ fontSize: 12 }} onClick={() => setSelectedEmp(m.id)}>
+            {m.name}
+          </button>
+        ))}
+      </div>
+
+      {selEmp && (
+        <div className="gf-card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Avatar initials={selEmp.avatar} size={32} color="#3b82f6" />
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 600 }}>{selEmp.name}</p>
+              <p style={{ fontSize: 11, color: 'var(--text3)' }}>{selEmp.dept} · {empGoals.length} approved goals</p>
+            </div>
+          </div>
+          {empGoals.length === 0 ? (
+            <div style={{ padding: 32, textAlign: 'center', color: 'var(--text2)', fontSize: 13 }}>No approved goals</div>
+          ) : (
+            <table>
+              <thead>
+                <tr><th>Goal</th><th>Target</th><th>Q1</th><th>Q2</th><th>Q2 Score</th><th>Status</th><th>Check-in</th></tr>
+              </thead>
+              <tbody>
+                {empGoals.map(g => {
+                  const score = computeScore(g, 2);
+                  return (
+                    <tr key={g.id}>
+                      <td>
+                        <p style={{ fontWeight: 500, fontSize: 13 }}>{g.title}</p>
+                        <p style={{ fontSize: 11, color: 'var(--text3)' }}>{g.thrustArea} · {g.weightage}%</p>
+                        {g.comments?.length > 0 && <p style={{ fontSize: 11, color: 'var(--accent2)', marginTop: 2 }}>💬 {g.comments.length} comment(s)</p>}
+                      </td>
+                      <td style={{ fontFamily: 'var(--mono)', fontSize: 13 }}>{g.target}</td>
+                      <td style={{ fontFamily: 'var(--mono)', fontSize: 13, color: g.q1Actual !== null ? 'var(--text)' : 'var(--text3)' }}>{g.q1Actual ?? '—'}</td>
+                      <td style={{ fontFamily: 'var(--mono)', fontSize: 13, color: g.q2Actual !== null ? 'var(--text)' : 'var(--text3)' }}>{g.q2Actual ?? '—'}</td>
+                      <td>
+                        {score !== null ? (
+                          <span style={{ fontWeight: 600, color: score >= 80 ? 'var(--green)' : score >= 50 ? 'var(--amber)' : 'var(--red)' }}>{score}%</span>
+                        ) : '—'}
+                      </td>
+                      <td><span className={`gf-tag tag-${g.status?.toLowerCase().replace(/ /g, '')}`}>{g.status}</span></td>
+                      <td>
+                        <button className="gf-btn gf-btn-ghost" style={{ fontSize: 11, padding: '4px 10px' }} onClick={() => { setCheckinModal(g.id); setCheckinComment(''); }}>
+                          + Check-in
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {checkinModal && (
+        <div className="modal-overlay">
+          <div className="modal-box" style={{ maxWidth: 440 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 14 }}>Manager Check-in Comment</h2>
+            <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 12 }}>
+              Document the discussion for: <strong>{goals.find(g => g.id === checkinModal)?.title}</strong>
+            </p>
+            <textarea className="gf-input" rows={4} value={checkinComment} onChange={e => setCheckinComment(e.target.value)} placeholder="Summary of the check-in discussion…" style={{ resize: 'vertical' }} />
+            <div className="divider" />
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button className="gf-btn gf-btn-ghost" onClick={() => setCheckinModal(null)}>Cancel</button>
+              <button className="gf-btn gf-btn-primary" onClick={() => saveCheckin(checkinModal)} disabled={!checkinComment.trim()}>Save Comment</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── ANALYTICS PAGE ────────────────────────────────────────────────────────────
+function AnalyticsPage({ goals, users, user }) {
+  const chartRef = useRef(null);
+  const chartRef2 = useRef(null);
+  const chartInstance = useRef(null);
+  const chartInstance2 = useRef(null);
+
+  const employees = users.filter(u => u.role === 'employee');
+
+  useEffect(() => {
+    if (!chartRef.current) return;
+    if (chartInstance.current) chartInstance.current.destroy();
+    const thrustData = {};
+    THRUST_AREAS.forEach(t => thrustData[t] = 0);
+    goals.forEach(g => { if (thrustData[g.thrustArea] !== undefined) thrustData[g.thrustArea]++; });
+    const labels = Object.keys(thrustData).filter(k => thrustData[k] > 0);
+    const data = labels.map(k => thrustData[k]);
+    chartInstance.current = new Chart(chartRef.current, {
+      type: 'doughnut',
+      data: { labels, datasets: [{ data, backgroundColor: ['#6c63ff','#3b82f6','#22c55e','#f59e0b','#ef4444','#14b8a6','#ec4899','#8b5cf6'], borderWidth: 0 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#9090a8', font: { size: 11 }, boxWidth: 12 } } } }
+    });
+    return () => chartInstance.current?.destroy();
+  }, [goals]);
+
+  useEffect(() => {
+    if (!chartRef2.current) return;
+    if (chartInstance2.current) chartInstance2.current.destroy();
+    const empNames = employees.map(e => e.name.split(' ')[0]);
+    const q1Scores = employees.map(e => {
+      const eg = goals.filter(g => g.employeeId === e.id && g.approvalStatus === 'approved');
+      if (!eg.length) return 0;
+      return Math.round(eg.reduce((s, g) => s + (computeScore(g, 1) || 0), 0) / eg.length);
+    });
+    const q2Scores = employees.map(e => {
+      const eg = goals.filter(g => g.employeeId === e.id && g.approvalStatus === 'approved');
+      if (!eg.length) return 0;
+      return Math.round(eg.reduce((s, g) => s + (computeScore(g, 2) || 0), 0) / eg.length);
+    });
+    chartInstance2.current = new Chart(chartRef2.current, {
+      type: 'bar',
+      data: {
+        labels: empNames,
+        datasets: [
+          { label: 'Q1 Score', data: q1Scores, backgroundColor: 'rgba(108,99,255,0.6)', borderWidth: 0, borderRadius: 4 },
+          { label: 'Q2 Score', data: q2Scores, backgroundColor: 'rgba(34,197,94,0.6)', borderWidth: 0, borderRadius: 4 },
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#9090a8', font: { size: 11 } } } },
+        scales: {
+          x: { ticks: { color: '#9090a8' }, grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { ticks: { color: '#9090a8', callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.04)' }, max: 110 }
+        }
+      }
+    });
+    return () => chartInstance2.current?.destroy();
+  }, [goals, users]);
+
+  const statusCounts = { 'Not Started': 0, 'On Track': 0, 'Completed': 0 };
+  goals.filter(g => g.approvalStatus === 'approved').forEach(g => { if (statusCounts[g.status] !== undefined) statusCounts[g.status]++; });
+
+  return (
+    <div>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700 }}>Analytics</h1>
+        <p style={{ fontSize: 13, color: 'var(--text2)', marginTop: 2 }}>Goal progress and organizational trends</p>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
+        {Object.entries(statusCounts).map(([label, val]) => (
+          <div key={label} className="stat-card">
+            <p style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>{label}</p>
+            <p style={{ fontSize: 28, fontWeight: 700, color: label === 'Completed' ? 'var(--green)' : label === 'On Track' ? 'var(--blue)' : 'var(--text2)' }}>{val}</p>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+        <div className="gf-card">
+          <p className="section-title" style={{ marginBottom: 12, fontSize: 13 }}>Goals by Thrust Area</p>
+          <div style={{ height: 220 }}><canvas ref={chartRef} role="img" aria-label="Donut chart showing goals by thrust area" /></div>
+        </div>
+        <div className="gf-card">
+          <p className="section-title" style={{ marginBottom: 12, fontSize: 13 }}>Quarter-on-Quarter Progress</p>
+          <div style={{ height: 220 }}><canvas ref={chartRef2} role="img" aria-label="Bar chart comparing Q1 and Q2 scores per employee" /></div>
+        </div>
+      </div>
+
+      {/* Heatmap */}
+      <div className="gf-card">
+        <p className="section-title" style={{ marginBottom: 16, fontSize: 13 }}>Team Progress Heatmap</p>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ minWidth: 500 }}>
+            <thead>
+              <tr>
+                <th>Employee</th>
+                {employees.flatMap(e => goals.filter(g => g.employeeId === e.id && g.approvalStatus === 'approved').slice(0, 3)).map((_, i) => <th key={i} style={{ width: 80 }}>Goal {i + 1}</th>)}
+                <th>Avg</th>
+              </tr>
+            </thead>
+            <tbody>
+              {employees.map(e => {
+                const eg = goals.filter(g => g.employeeId === e.id && g.approvalStatus === 'approved');
+                const scores = eg.map(g => computeScore(g, 2));
+                const avg = scores.length ? Math.round(scores.reduce((s, v) => s + (v || 0), 0) / scores.length) : null;
+                return (
+                  <tr key={e.id}>
+                    <td>{e.name}</td>
+                    {eg.map(g => {
+                      const s = computeScore(g, 2);
+                      const bg = s === null ? 'var(--bg4)' : s >= 80 ? 'rgba(34,197,94,0.2)' : s >= 50 ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)';
+                      const col = s === null ? 'var(--text3)' : s >= 80 ? 'var(--green)' : s >= 50 ? 'var(--amber)' : 'var(--red)';
+                      return <td key={g.id} style={{ background: bg, textAlign: 'center', fontWeight: 600, color: col, fontSize: 13 }}>{s !== null ? `${s}%` : '—'}</td>;
+                    })}
+                    {avg !== null && <td style={{ fontWeight: 600, color: avg >= 70 ? 'var(--green)' : 'var(--amber)', textAlign: 'center' }}>{avg}%</td>}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── ADMIN DASHBOARD ───────────────────────────────────────────────────────────
+function AdminDashboard({ goals, users }) {
+  const allGoals = goals.length;
+  const pending = goals.filter(g => g.approvalStatus === 'pending').length;
+  const approved = goals.filter(g => g.approvalStatus === 'approved').length;
+  const employees = users.filter(u => u.role === 'employee').length;
+  const cycle = { name: '2025–26', phase: 'Q2 Check-in', status: 'Active', opened: '1 May 2025' };
+
+  return (
+    <div>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700 }}>Admin Dashboard</h1>
+        <p style={{ fontSize: 13, color: 'var(--text2)', marginTop: 2 }}>System-wide overview and management</p>
+      </div>
+
+      <div style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 'var(--radius)', padding: '12px 16px', marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ color: 'var(--green)', fontSize: 16 }}>◉</span>
+          <div>
+            <p style={{ fontSize: 13, fontWeight: 500 }}>Active Cycle: <strong>{cycle.name}</strong> · Phase: {cycle.phase}</p>
+            <p style={{ fontSize: 11, color: 'var(--text2)' }}>Goal setting opened {cycle.opened}</p>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
+        {[
+          { label: 'Total Employees', val: employees, color: 'var(--accent)' },
+          { label: 'Total Goals', val: allGoals, color: 'var(--blue)' },
+          { label: 'Pending Approval', val: pending, color: 'var(--amber)' },
+          { label: 'Approved', val: approved, color: 'var(--green)' },
+        ].map(s => (
+          <div key={s.label} className="stat-card">
+            <p style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>{s.label}</p>
+            <p style={{ fontSize: 28, fontWeight: 700, color: s.color }}>{s.val}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="gf-card">
+        <p className="section-title">Completion Rate by Employee</p>
+        {users.filter(u => u.role === 'employee').map(emp => {
+          const eg = goals.filter(g => g.employeeId === emp.id);
+          const total = eg.length;
+          const done = eg.filter(g => g.approvalStatus === 'approved').length;
+          const pct = total ? Math.round((done / total) * 100) : 0;
+          return (
+            <div key={emp.id} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+              <Avatar initials={emp.avatar} size={28} color="#6c63ff" />
+              <p style={{ fontSize: 13, width: 140, flexShrink: 0 }}>{emp.name}</p>
+              <div style={{ flex: 1 }}>
+                <div className="progress-bar-bg">
+                  <div className="progress-bar-fill" style={{ width: `${pct}%`, background: pct >= 80 ? 'var(--green)' : pct >= 50 ? 'var(--amber)' : 'var(--accent)' }} />
+                </div>
+              </div>
+              <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)', width: 40, textAlign: 'right' }}>{pct}%</p>
+              <p style={{ fontSize: 11, color: 'var(--text3)', width: 60 }}>{done}/{total} goals</p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── ADMIN CYCLES ─────────────────────────────────────────────────────────────
+function CyclesPage({ goals, setGoals, users, showToast }) {
+  const [unlockModal, setUnlockModal] = useState(null);
+  const [unlockEmpId, setUnlockEmpId] = useState('');
+
+  const handleUnlock = () => {
+    if (!unlockEmpId) return;
+    setGoals(prev => prev.map(g => g.employeeId === parseInt(unlockEmpId) && g.approvalStatus === 'approved'
+      ? { ...g, approvalStatus: 'pending' } : g));
+    showToast('Goals unlocked for editing', 'success');
+    setUnlockModal(false); setUnlockEmpId('');
+  };
+
+  const schedule = [
+    { period: 'Phase 1 — Goal Setting', opens: '1 May 2025', action: 'Goal Creation, Submission & Approval', active: false, done: true },
+    { period: 'Q1 Check-in', opens: 'July 2025', action: 'Progress Update — Planned vs. Actual', active: false, done: true },
+    { period: 'Q2 Check-in', opens: 'October 2025', action: 'Progress Update — Planned vs. Actual', active: true, done: false },
+    { period: 'Q3 Check-in', opens: 'January 2026', action: 'Progress Update — Planned vs. Actual', active: false, done: false },
+    { period: 'Q4 / Annual', opens: 'March/April 2026', action: 'Final Achievement Capture', active: false, done: false },
+  ];
+
+  return (
+    <div>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700 }}>Cycle Management</h1>
+        <p style={{ fontSize: 13, color: 'var(--text2)', marginTop: 2 }}>Manage goal-setting cycles and windows</p>
+      </div>
+
+      <div className="gf-card" style={{ marginBottom: 20 }}>
+        <p className="section-title">2025–26 Performance Cycle</p>
+        {schedule.map((s, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 0', borderBottom: i < schedule.length - 1 ? '1px solid var(--border)' : 'none' }}>
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: s.active ? 'var(--green)' : s.done ? 'var(--accent)' : 'var(--bg4)', flexShrink: 0 }} />
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 13, fontWeight: 500 }}>{s.period}</p>
+              <p style={{ fontSize: 11, color: 'var(--text3)' }}>{s.action}</p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ fontSize: 12, color: 'var(--text2)' }}>{s.opens}</p>
+              {s.active && <span className="gf-tag tag-active" style={{ marginTop: 2 }}>Active</span>}
+              {s.done && !s.active && <span className="gf-tag tag-locked" style={{ marginTop: 2 }}>Completed</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="gf-card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <p className="section-title" style={{ margin: 0 }}>Goal Lock Management</p>
+            <p style={{ fontSize: 12, color: 'var(--text2)', marginTop: 4 }}>Unlock approved goals for employee editing (exception handling)</p>
+          </div>
+          <button className="gf-btn gf-btn-ghost" onClick={() => setUnlockModal(true)}>Unlock Goals</button>
+        </div>
+      </div>
+
+      {unlockModal && (
+        <div className="modal-overlay">
+          <div className="modal-box" style={{ maxWidth: 400 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 14 }}>Unlock Employee Goals</h2>
+            <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 14 }}>This will revert approved goals to pending, allowing the employee to edit and resubmit.</p>
+            <label className="gf-label">Select Employee</label>
+            <select className="gf-select" value={unlockEmpId} onChange={e => setUnlockEmpId(e.target.value)}>
+              <option value="">— Select —</option>
+              {users.filter(u => u.role === 'employee').map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+            </select>
+            <div className="divider" />
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button className="gf-btn gf-btn-ghost" onClick={() => setUnlockModal(false)}>Cancel</button>
+              <button className="gf-btn gf-btn-danger" onClick={handleUnlock} disabled={!unlockEmpId}>Unlock Goals</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── AUDIT PAGE ────────────────────────────────────────────────────────────────
+function AuditPage({ goals, users }) {
+  const [log, setLog] = useState(AUDIT_LOG);
+
+  return (
+    <div>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700 }}>Audit Trail</h1>
+        <p style={{ fontSize: 13, color: 'var(--text2)', marginTop: 2 }}>Complete log of all goal changes post-lock</p>
+      </div>
+
+      <div className="gf-card" style={{ padding: 0, overflow: 'hidden' }}>
+        <table>
+          <thead>
+            <tr>
+              <th>Timestamp</th><th>User</th><th>Action</th><th>Target</th><th>Detail</th>
+            </tr>
+          </thead>
+          <tbody>
+            {log.map(entry => (
+              <tr key={entry.id}>
+                <td style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--text2)', whiteSpace: 'nowrap' }}>{entry.timestamp}</td>
+                <td>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Avatar initials={entry.userName.split(' ').map(n => n[0]).join('')} size={22} color="#6c63ff" />
+                    <span style={{ fontSize: 12 }}>{entry.userName}</span>
+                  </div>
+                </td>
+                <td><span style={{ fontSize: 12, color: 'var(--accent2)' }}>{entry.action}</span></td>
+                <td style={{ fontSize: 12, color: 'var(--text2)' }}>{entry.targetUser}</td>
+                <td style={{ fontSize: 12, color: 'var(--text3)' }}>{entry.detail}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ─── REPORTS PAGE ──────────────────────────────────────────────────────────────
+function ReportsPage({ goals, users, showToast }) {
+  const employees = users.filter(u => u.role === 'employee');
+
+  const exportCSV = () => {
+    const rows = [['Employee', 'Goal', 'Thrust Area', 'UoM', 'Target', 'Q1 Actual', 'Q1 Score', 'Q2 Actual', 'Q2 Score', 'Status', 'Approval', 'Weightage']];
+    employees.forEach(emp => {
+      const eg = goals.filter(g => g.employeeId === emp.id);
+      eg.forEach(g => {
+        rows.push([emp.name, g.title, g.thrustArea, g.uom, g.target, g.q1Actual ?? '', computeScore(g, 1) ?? '', g.q2Actual ?? '', computeScore(g, 2) ?? '', g.status, g.approvalStatus, g.weightage + '%']);
+      });
+    });
+    const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'goalflow-report.csv'; a.click();
+    showToast('CSV exported', 'success');
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <div>
+          <h1 style={{ fontSize: 20, fontWeight: 700 }}>Reports</h1>
+          <p style={{ fontSize: 13, color: 'var(--text2)', marginTop: 2 }}>Achievement reports and exports</p>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="gf-btn gf-btn-ghost" onClick={exportCSV}>↓ Export CSV</button>
+          <button className="gf-btn gf-btn-primary" onClick={() => { exportCSV(); showToast('Excel export complete', 'success'); }}>↓ Export Excel</button>
+        </div>
+      </div>
+
+      <div className="gf-card" style={{ padding: 0, overflow: 'hidden' }}>
+        <table>
+          <thead>
+            <tr><th>Employee</th><th>Goal</th><th>Thrust Area</th><th>Target</th><th>Q1</th><th>Q1%</th><th>Q2</th><th>Q2%</th><th>Status</th><th>Weight</th></tr>
+          </thead>
+          <tbody>
+            {employees.flatMap(emp => {
+              const eg = goals.filter(g => g.employeeId === emp.id && g.approvalStatus === 'approved');
+              return eg.map((g, i) => (
+                <tr key={g.id}>
+                  {i === 0 && <td rowSpan={eg.length} style={{ verticalAlign: 'top', paddingTop: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Avatar initials={emp.avatar} size={24} color="#6c63ff" />
+                      <span style={{ fontSize: 12 }}>{emp.name}</span>
+                    </div>
+                  </td>}
+                  <td style={{ fontSize: 12 }}>{g.title}</td>
+                  <td style={{ fontSize: 11, color: 'var(--text2)' }}>{g.thrustArea}</td>
+                  <td style={{ fontFamily: 'var(--mono)', fontSize: 12 }}>{g.target}</td>
+                  <td style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--text2)' }}>{g.q1Actual ?? '—'}</td>
+                  <td>
+                    {computeScore(g, 1) !== null
+                      ? <span style={{ fontWeight: 600, color: computeScore(g, 1) >= 80 ? 'var(--green)' : 'var(--amber)' }}>{computeScore(g, 1)}%</span>
+                      : '—'}
+                  </td>
+                  <td style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--text2)' }}>{g.q2Actual ?? '—'}</td>
+                  <td>
+                    {computeScore(g, 2) !== null
+                      ? <span style={{ fontWeight: 600, color: computeScore(g, 2) >= 80 ? 'var(--green)' : 'var(--amber)' }}>{computeScore(g, 2)}%</span>
+                      : '—'}
+                  </td>
+                  <td><span className={`gf-tag tag-${g.status?.toLowerCase().replace(/ /g, '')}`} style={{ fontSize: 10 }}>{g.status}</span></td>
+                  <td style={{ fontWeight: 600, color: 'var(--accent2)', fontFamily: 'var(--mono)', fontSize: 12 }}>{g.weightage}%</td>
+                </tr>
+              ));
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ─── HIERARCHY PAGE ────────────────────────────────────────────────────────────
+function HierarchyPage({ users }) {
+  const managers = users.filter(u => u.role === 'manager');
+  return (
+    <div>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700 }}>Org Hierarchy</h1>
+        <p style={{ fontSize: 13, color: 'var(--text2)', marginTop: 2 }}>Reporting structure and role assignments</p>
+      </div>
+      {managers.map(mgr => {
+        const reports = users.filter(u => u.managerId === mgr.id);
+        return (
+          <div key={mgr.id} className="gf-card" style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <Avatar initials={mgr.avatar} size={36} color="#22c55e" />
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 600 }}>{mgr.name}</p>
+                <span className="gf-tag tag-active">Manager (L1)</span>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10 }}>
+              {reports.map(r => (
+                <div key={r.id} style={{ background: 'var(--bg3)', borderRadius: 'var(--radius)', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Avatar initials={r.avatar} size={28} color="#3b82f6" />
+                  <div>
+                    <p style={{ fontSize: 12, fontWeight: 500 }}>{r.name}</p>
+                    <p style={{ fontSize: 10, color: 'var(--text3)' }}>{r.dept}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+      <div className="gf-card">
+        <p className="section-title" style={{ fontSize: 13 }}>Admin</p>
+        {users.filter(u => u.role === 'admin').map(a => (
+          <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Avatar initials={a.avatar} size={28} color="#f59e0b" />
+            <div>
+              <p style={{ fontSize: 12, fontWeight: 500 }}>{a.name}</p>
+              <span className="gf-tag tag-pending">Admin / HR</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── MAIN APP ─────────────────────────────────────────────────────────────────
+function App() {
+  const [user, setUser] = useState(null);
+  const [activePage, setActivePage] = useState('dashboard');
+  const [goals, setGoals] = useState(DEMO_GOALS);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (msg, type = 'info') => {
+    setToast({ msg, type, id: Date.now() });
+  };
+
+  const handleLogin = (u) => {
+    setUser(u);
+    setActivePage('dashboard');
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    setActivePage('dashboard');
+  };
+
+  if (!user) return <LoginPage onLogin={handleLogin} />;
+
+  const pages = {
+    employee: {
+      dashboard: <EmployeeDashboard user={user} goals={goals} setActivePage={setActivePage} />,
+      goals: <EmployeeGoalsPage user={user} goals={goals} setGoals={setGoals} showToast={showToast} />,
+      checkin: <CheckInPage user={user} goals={goals} setGoals={setGoals} showToast={showToast} />,
+    },
+    manager: {
+      dashboard: <ManagerDashboard user={user} goals={goals} users={USERS} />,
+      team: <TeamGoalsPage user={user} goals={goals} setGoals={setGoals} users={USERS} showToast={showToast} />,
+      approvals: <ApprovalsPage user={user} goals={goals} setGoals={setGoals} users={USERS} showToast={showToast} />,
+      analytics: <AnalyticsPage goals={goals} users={USERS} user={user} />,
+    },
+    admin: {
+      dashboard: <AdminDashboard goals={goals} users={USERS} />,
+      cycles: <CyclesPage goals={goals} setGoals={setGoals} users={USERS} showToast={showToast} />,
+      hierarchy: <HierarchyPage users={USERS} />,
+      reports: <ReportsPage goals={goals} users={USERS} showToast={showToast} />,
+      audit: <AuditPage goals={goals} users={USERS} />,
+      analytics: <AnalyticsPage goals={goals} users={USERS} user={user} />,
+    },
+  };
+
+  const currentPage = pages[user.role]?.[activePage] || pages[user.role]?.dashboard;
+
+  return (
+    <div style={{ display: 'flex', minHeight: '100vh' }}>
+      <Sidebar user={user} activePage={activePage} setActivePage={setActivePage} onLogout={handleLogout} />
+      <main style={{ flex: 1, padding: 28, overflowY: 'auto', minWidth: 0 }}>
+        {currentPage}
+      </main>
+      {toast && <Toast key={toast.id} msg={toast.msg} type={toast.type} onDone={() => setToast(null)} />}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

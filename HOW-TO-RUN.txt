@@ -1,0 +1,36 @@
+============================================================
+  GoalFlow - HOW TO RUN THE APP
+  AtomQuest Hackathon 1.0
+============================================================
+
+STEP 1: Open the file named "index.html" in your browser
+        (double-click it, or drag it into Chrome/Edge/Firefox)
+
+STEP 2: You will see the GoalFlow login screen
+
+STEP 3: Use these login credentials:
+
+  EMPLOYEE  → priya@atomquest.in   / emp123
+  MANAGER   → meera@atomquest.in   / mgr123
+  ADMIN     → admin@atomquest.in   / admin123
+
+  OR just click the blue/green/yellow quick-login buttons
+  on the login screen!
+
+============================================================
+  NO INSTALLATION REQUIRED
+  NO npm install
+  NO server needed
+  Works 100% offline in any browser
+============================================================
+
+FILES IN THIS FOLDER:
+  index.html          ← THE COMPLETE APP (open this!)
+  server.js           ← Backend API code (Node.js/Express)
+  package.json        ← Project dependencies list
+  README.md           ← Full documentation
+  credentials.txt     ← Login credentials
+  HOW-TO-RUN.txt      ← This file
+  architecture.pdf    ← System architecture diagram
+
+============================================================
