@@ -5,7 +5,7 @@
 
 ## 🚀 How to Run (Super Simple!)
 
-### Option 1 — Open directly in browser (RECOMMENDED for demo)
+### Option 1 — Open directly in browser 
 1. Download / extract this ZIP
 2. Double-click **`index.html`**
 3. Done! The full app loads instantly.
@@ -83,4 +83,4 @@ node server.js
 
 ---
 
-*GoalFlow v1.0 · AtomQuest Hackathon 1.0 · Built with React 18 + Chart.js*
+
