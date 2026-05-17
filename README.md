@@ -28,20 +28,7 @@ node server.js
 | **Manager** | meera@atomquest.in | mgr123 |
 | **Admin** | admin@atomquest.in | admin123 |
 
-> **TIP:** Use the colored quick-login buttons on the login screen!
-
----
-
-## 📁 Files in This Folder
-
-| File | What it is |
-|------|-----------|
-| `index.html` | ✅ **The complete working app — open this!** |
-| `server.js` | Node.js/Express backend API (production reference) |
-| `package.json` | Project dependencies |
-| `README.md` | This file |
-| `credentials.txt` | Login credentials |
-| `HOW-TO-RUN.txt` | Quick start guide |
+> 
 
 ---
 
