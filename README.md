@@ -3,7 +3,7 @@
 
 ---
 
-## 🚀 How to Run (Super Simple!)
+##  How to Run 
 
 ### Option 1 — Open directly in browser 
 1. Download / extract this ZIP
@@ -72,7 +72,7 @@ node server.js
 
 ---
 
-## 🎯 Score Formulas (All 4 UoM Types)
+##  Score Formulas (All 4 UoM Types)
 
 | UoM | Formula |
 |-----|---------|
